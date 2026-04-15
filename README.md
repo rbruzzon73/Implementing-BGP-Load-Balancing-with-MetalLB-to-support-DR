@@ -566,5 +566,4 @@ The External IP Address is now accessible via the rtr-frr03-dr router connected 
 ## Authors
 
 Riccardo Bruzzone - Senior Technical Account Manager <br>
-with the contribution of: <br>
 Daniele Nessilli - Techincal Account Manager 
