@@ -1,12 +1,16 @@
-# BGP-Driven Disaster Recovery for OpenShift Virtualization
+# Implementing BGP Load Balancing infrastructure with MetalLB to support disaster recovery strategies in OpenShift Virtualization.
 <br>
 
-## MetalLB Layer 3 (BGP) as a foundational component for Disaster Recovery strategies in OpenShift Virtualization
+## MetalLB Layer 3 (BGP) as a foundational component for establishing a BGP load balancer infrastructure to support disaster recovery strategies in OpenShift Virtualization.
 
 - The BGP-driven Disaster Recovery architecture utilizes MetalLB in Layer 3 (BGP) mode as a foundational component.
-This approach leverages the reconvergence capabilities of the network infrastructure Control Plane, where the BGP protocol of the MetalLB in Layer 3 is enabled (Figure 1).
+This approach leverages the reconvergence capabilities of the network infrastructure Control Plane, where the BGP protocol of the MetalLB in Layer 3 is enabled (Figure 1) and the accesses to the Virtual IP addresses of the applications are granted via loadBalancer service.
 
 - MetalLB in Layer 3 mode (BGP mode) within an OpenShift Virtualization Cluster enables the allocation of External IP addresses for OpenShift Load Balancer services connected to virtual machines (service's  endpoints).
+
+- Point Of Attention:
+
+   - This approach does not support VMs connected directly to customer VLANs where IP advertisement must occur at the infrastructure level (e.g., on customer routers serving as the default gateway for those specific VLANs), rather than within OpenShift Virtualization.
 
 - MetalLB advertises external IP addresses as Network Layer Reachability Information (NLRI composed by Network Prefix and Network Length) to the network's control plane via BGP.
 This feature facilitates the deployment of scalable, highly available network services, including those based on dual-stack (IPv4 and IPv6)."
@@ -17,22 +21,22 @@ This approach leads to a significant reduction in the total cost of ownership of
    - The external load balancer (LB) is no longer necessary in the Disaster Recovery setup based on the BGP-driven architecture (Figure 1).
      This is because load balancing functionality is now managed by the OpenShift Load Balancer Services with external IP addresses, which are directly advertised through the BGP protocol of the MetalLB in Layer 3 mode.
 
-   - The DNS Global Load Balancer (DNS GLB) is no longer necessary for Disaster Recovery based on the BGP-driven architecture (Figure 1).
-     In this scenario,  the reachability of External IP addresses associated with the OpenShift Load Balancer Service is maintained through the reconvergence capabilities of the Network Control Plane. 
+   - The Load Balancers are no longer necessary for Disaster Recovery based on the BGP load balancer architecture (Figure 1). 
+In this scenario,  the reachability of External IP addresses associated with the OpenShift Load Balancer Service is maintained through the reconvergence capabilities of the Network Control Plane. 
 
 - The adoption of a Network Topology where the External IP Addresses assigned to the LoadBalancer Services and learned from the External BGP routers are redistributed, towards an Interior Gateway Protocol (OSPF in Figure 1), eliminates the complexities associated with the full mesh requirement of the iBGP protocol.
   
-   *Figure 1 - Modernizing Disaster Recovery: from traditional Hardware Load Balancers to an Integrated, BGP-Driven Architecture.*
+   *Figure 1 - Modernizing Disaster Recovery: from traditional Hardware Load Balancers to an Integrated, BGP load balancer architecture.*
    <img src="https://github.com/rbruzzon73/BGP-Driven_Disaster_Recovery_for_OpenShift_Virtualization/blob/main/Figure1-Modernizing_Disaster_Recovery.jpg" width="100%" height="100%">
 
 
    ***
 
    Note: <br>
-   DNS GLB will remain relevant in Business Continuity architectures that require an RTO (Total Downtime) of zero.
-   In such cases, different sets of IP Address Pools  are assigned to the MetalLB of the OpenShift Virtualization Clusters to grant the scenarios where the VMs operate in an active-active mode (Figure 2).
+   LB will remain relevant in Business Continuity architectures that require an RTO (Total Downtime) of zero. 
+In such cases, different sets of IP Address Pools  are assigned to the MetalLB of the OpenShift Virtualization Clusters to grant the scenarios where the VMs operate in an active-active mode (Figure 2)..
 
-   *Figure 2 - Modernizing Business Continuity: from traditional Hardware Load Balancers to an Integrated, BGP-Driven Architecture.*
+   *Figure 2 - Modernizing Business Continuity: from traditional Hardware Load Balancers to an Integrated, BGP load balancer Architecture.*
    <img src="https://github.com/rbruzzon73/BGP-Driven_Disaster_Recovery_for_OpenShift_Virtualization/blob/main/Figure2-Modernizing_Business_Continuity.jpg" width="100%" height="100%">
 
     ***
@@ -50,7 +54,7 @@ This approach leads to a significant reduction in the total cost of ownership of
 <br>
 <br>
 
-- The BGP Equal-Cost Multi-Path (ECMP) feature (Figure 3), which allows for the distribution of traffic across multiple equal-cost paths to the same destination, along with BGP's failover capabilities, are critical components that enhance both the scalability and performance of a BGP-based disaster recovery solution.\
+- The BGP Equal-Cost Multi-Path (ECMP) feature (Figure 3), which allows for the distribution of traffic across multiple equal-cost paths to the same destination, along with BGP's failover capabilities, are critical components that enhance both the scalability and performance of a BGP solution.\
 Additionally, the reconvergence capabilities of routing protocols contribute significantly to the system resilience.
 <br>
 <br>
@@ -124,7 +128,7 @@ Manual allocation of External IP Addresses (Figure 5) can be implemented by mean
    |       nodeSelectors        |                       NodeSelectors allows to limit the nodes to announce as next hops for the LoadBalancer IP. When empty, all the nodes having  are announced as next hops.                       |
    |           peers            |                         Peers limits the BGP peer to advertise the ips of the selected pools to.When empty, the loadbalancer IP is announced to all the BGPPeers configured.                        |
 
-- In a BGP-driven network topology based on iBGP, where the local ASN matches the peer ASN (Figure 1), the behavior of the BGP protocol can be affected by both the BGP Peer configurations and the BFD Profile, as perceptible in the next two tables.\
+- In a BGP network topology based on iBGP, where the local ASN matches the peer ASN (Figure 1), the behavior of the BGP protocol can be affected by both the BGP Peer configurations and the BFD Profile, as perceptible in the next two tables.\
 
 - Please note that the BGPPeer Custom Resource (CR) contains the necessary information to establish a BGP session with a single peer.\
 To establish sessions with multiple external routers, it is necessary to define multiple BGPPeer CRs, as illustrated in Figure 6.
@@ -152,7 +156,7 @@ To establish sessions with multiple external routers, it is necessary to define 
    <img src="https://github.com/rbruzzon73/BGP-Driven_Disaster_Recovery_for_OpenShift_Virtualization/blob/main/Figure6-MetalLB_in_Layer3-BGP_mode.jpg" width="100%" height="100%">
    <br>
 
-## Proof-of-Concept for BGP-Based Disaster Recovery for OpenShift Virtualization.
+## Proof-of-Concept for BGP load balancer infrastructure to support Disaster Recovery for OpenShift Virtualization.
 
 - The infrastructure for this Proof-of-Concept is based on the network topology illustrated in Figure 7 and the configurations detailed in the addendum section located at the end of this document.
 
@@ -195,7 +199,7 @@ To establish sessions with multiple external routers, it is necessary to define 
   rhel8-server-01-manual-svc   LoadBalancer   172.30.145.246   192.11.1.100   22000:31214/TCP,22080:31217/TCP   3m16s
   ~~~
 
-  *Figure 7 - Environment for Proof-of-Concept on BGP-Based Disaster Recovery for OpenShift Virtualization*
+  *Figure 7 - Environment for Proof-of-Concept on BGP load balancer infrastructure to support Disaster Recovery for OpenShift Virtualization*
   <img src="https://github.com/rbruzzon73/BGP-Driven_Disaster_Recovery_for_OpenShift_Virtualization/blob/main/Figure7-Environment_for_Proof-of-Concept.jpg" width="100%" height="100%">
   <br>
 
